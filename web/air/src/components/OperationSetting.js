@@ -23,7 +23,8 @@ const OperationSetting = () => {
     DisplayInCurrencyEnabled: '',
     DisplayTokenStatEnabled: '',
     ApproximateTokenEnabled: '',
-    RetryTimes: 0
+    RetryTimes: 0,
+    NonDisablableChannels: ''
   });
   const [originInputs, setOriginInputs] = useState({});
   let [loading, setLoading] = useState(false);
@@ -88,6 +89,9 @@ const OperationSetting = () => {
         }
         if (originInputs['QuotaRemindThreshold'] !== inputs.QuotaRemindThreshold) {
           await updateOption('QuotaRemindThreshold', inputs.QuotaRemindThreshold);
+        }
+        if (originInputs['NonDisablableChannels'] !== inputs.NonDisablableChannels) {
+          await updateOption('NonDisablableChannels', inputs.NonDisablableChannels);
         }
         break;
       case 'ratio':
@@ -272,6 +276,13 @@ const OperationSetting = () => {
               type='number'
               min='0'
               placeholder='低于此额度时将发送邮件提醒用户'
+            />
+            <Form.Input
+              label='不禁用的渠道 (逗号分隔)'
+              name='NonDisablableChannels'
+              placeholder='例如: 1,2,3'
+              onChange={handleInputChange}
+              value={inputs.NonDisablableChannels}
             />
           </Form.Group>
           <Form.Group inline>

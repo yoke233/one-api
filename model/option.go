@@ -66,6 +66,7 @@ func InitOptionMap() {
 	config.OptionMap["QuotaForInviter"] = strconv.FormatInt(config.QuotaForInviter, 10)
 	config.OptionMap["QuotaForInvitee"] = strconv.FormatInt(config.QuotaForInvitee, 10)
 	config.OptionMap["QuotaRemindThreshold"] = strconv.FormatInt(config.QuotaRemindThreshold, 10)
+	config.OptionMap["NonDisablableChannels"] = ""
 	config.OptionMap["PreConsumedQuota"] = strconv.FormatInt(config.PreConsumedQuota, 10)
 	config.OptionMap["ModelRatio"] = billingratio.ModelRatio2JSONString()
 	config.OptionMap["GroupRatio"] = billingratio.GroupRatio2JSONString()
@@ -219,6 +220,20 @@ func updateOptionMap(key string, value string) (err error) {
 		config.QuotaForInvitee, _ = strconv.ParseInt(value, 10, 64)
 	case "QuotaRemindThreshold":
 		config.QuotaRemindThreshold, _ = strconv.ParseInt(value, 10, 64)
+	case "NonDisablableChannels":
+		var channels []int
+		for _, str := range strings.Split(value, ",") {
+			if str == "" {
+				continue
+			}
+			channelID, err := strconv.Atoi(strings.TrimSpace(str))
+			if err != nil {
+				logger.SysLog("Invalid channel ID in NonDisablableChannels: " + str)
+				continue
+			}
+			channels = append(channels, channelID)
+		}
+		config.NonDisablableChannels = channels
 	case "PreConsumedQuota":
 		config.PreConsumedQuota, _ = strconv.ParseInt(value, 10, 64)
 	case "RetryTimes":

@@ -1,5 +1,5 @@
 FROM --platform=$BUILDPLATFORM node:16 AS builder
-
+RUN npm config set registry https://registry.npmmirror.com
 WORKDIR /web
 COPY ./VERSION .
 COPY ./web .
@@ -18,7 +18,10 @@ RUN DISABLE_ESLINT_PLUGIN='true' REACT_APP_VERSION=$(cat VERSION) npm run build
 
 FROM golang:alpine AS builder2
 
+# 设置环境变量，使用国内的 Alpine 镜像源
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 RUN apk add --no-cache g++
+RUN go env -w  GOPROXY=https://goproxy.cn,direct
 
 ENV GO111MODULE=on \
     CGO_ENABLED=1 \
@@ -32,6 +35,9 @@ COPY --from=builder /web/build ./web/build
 RUN go build -trimpath -ldflags "-s -w -X 'github.com/songquanpeng/one-api/common.Version=$(cat VERSION)' -extldflags '-static'" -o one-api
 
 FROM alpine
+
+# 设置环境变量，使用国内的 Alpine 镜像源
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 RUN apk update \
     && apk upgrade \

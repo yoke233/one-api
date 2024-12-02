@@ -40,6 +40,7 @@ const OperationSetting = () => {
     DisplayTokenStatEnabled: "",
     ApproximateTokenEnabled: "",
     RetryTimes: 0,
+    NonDisablableChannels: ""
   });
   const [originInputs, setOriginInputs] = useState({});
   let [loading, setLoading] = useState(false);
@@ -387,6 +388,20 @@ const OperationSetting = () => {
                 onChange={handleInputChange}
                 label="额度提醒阈值"
                 placeholder="低于此额度时将发送邮件提醒用户"
+                disabled={loading}
+              />
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel htmlFor="NonDisablableChannels">
+                不禁用的渠道 (逗号分隔)
+              </InputLabel>
+              <OutlinedInput
+                id="NonDisablableChannels"
+                name="NonDisablableChannels"
+                label="不禁用的渠道 (逗号分隔)"
+                placeholder="例如: 1,2,3"
+                onChange={handleInputChange}
+                value={inputs.NonDisablableChannels}
                 disabled={loading}
               />
             </FormControl>

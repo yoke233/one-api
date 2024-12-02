@@ -36,12 +36,29 @@ func DisableChannel(channelId int, channelName string, reason string) {
 }
 
 func MetricDisableChannel(channelId int, successRate float64) {
+	// Check if the channel is marked as non-disablable
+	if contains(config.NonDisablableChannels, channelId) {
+		logger.SysLog(fmt.Sprintf("channel #%d is marked as non-disablable, skipping disable action", channelId))
+		return
+	}
+
+	// Proceed with disabling the channel
 	model.UpdateChannelStatusById(channelId, model.ChannelStatusAutoDisabled)
 	logger.SysLog(fmt.Sprintf("channel #%d has been disabled due to low success rate: %.2f", channelId, successRate*100))
 	subject := fmt.Sprintf("渠道 #%d 已被禁用", channelId)
 	content := fmt.Sprintf("该渠道（#%d）在最近 %d 次调用中成功率为 %.2f%%，低于阈值 %.2f%%，因此被系统自动禁用。",
 		channelId, config.MetricQueueSize, successRate*100, config.MetricSuccessRateThreshold*100)
 	notifyRootUser(subject, content)
+}
+
+// 定义一个泛型函数
+func contains[T comparable](arr []T, val T) bool {
+    for _, item := range arr {
+        if item == val {
+            return true
+        }
+    }
+    return false
 }
 
 // EnableChannel enable & notify
