@@ -10,6 +10,11 @@ const MODEL_MAPPING_EXAMPLE = {
     'gpt-4-0314': 'gpt-4',
     'gpt-4-32k-0314': 'gpt-4-32k'
 };
+const MODEL_CONN_MAPPING_EXAMPLE = {
+    'gpt-3.5-turbo-0301': 1,
+    'gpt-4-0314': 2,
+    'gpt-4-32k-0314': 5
+};
 
 function type2secretPrompt(type) {
     // inputs.type === 15 ? '按照如下格式输入：APIKey|SecretKey' : (inputs.type === 18 ? '按照如下格式输入：APPID|APISecret|APIKey' : '请输入渠道对应的鉴权密钥')
@@ -43,6 +48,7 @@ const EditChannel = (props) => {
         base_url: '',
         other: '',
         model_mapping: '',
+        model_conn_mapping: '',
         system_prompt: '',
         models: [],
         auto_ban: 1,
@@ -143,6 +149,9 @@ const EditChannel = (props) => {
             if (data.model_mapping !== '') {
                 data.model_mapping = JSON.stringify(JSON.parse(data.model_mapping), null, 2);
             }
+            if (data.model_conn_mapping !== '') {
+                data.model_conn_mapping = JSON.stringify(JSON.parse(data.model_conn_mapping), null, 2);
+            }
             setInputs(data);
             if (data.auto_ban === 0) {
                 setAutoBan(false);
@@ -223,6 +232,10 @@ const EditChannel = (props) => {
             return;
         }
         if (inputs.model_mapping !== '' && !verifyJSON(inputs.model_mapping)) {
+            showInfo('模型映射必须是合法的 JSON 格式！');
+            return;
+        }
+        if (inputs.model_conn_mapping !== '' && !verifyJSON(inputs.model_conn_mapping)) {
             showInfo('模型映射必须是合法的 JSON 格式！');
             return;
         }
@@ -495,6 +508,19 @@ const EditChannel = (props) => {
                       }}
                       autosize
                       value={inputs.model_mapping}
+                      autoComplete='new-password'
+                    />
+                    <div style={{ marginTop: 10 }}>
+                        <Typography.Text strong>模型连接数：</Typography.Text>
+                    </div>
+                    <TextArea
+                      placeholder={`此项可选，用于当前渠道模型连接数，为一个 JSON 字符串，键为请求中模型名称，值为最大连接数，例如：\n${JSON.stringify(MODEL_CONN_MAPPING_EXAMPLE, null, 2)}`}
+                      name='model_conn_mapping'
+                      onChange={value => {
+                          handleInputChange('model_conn_mapping', value)
+                      }}
+                      autosize
+                      value={inputs.model_conn_mapping}
                       autoComplete='new-password'
                     />
                     <div style={{ marginTop: 10 }}>

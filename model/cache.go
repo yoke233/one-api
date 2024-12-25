@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/songquanpeng/one-api/common"
-	"github.com/songquanpeng/one-api/common/config"
-	"github.com/songquanpeng/one-api/common/logger"
-	"github.com/songquanpeng/one-api/common/random"
 	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/songquanpeng/one-api/common"
+	"github.com/songquanpeng/one-api/common/config"
+	"github.com/songquanpeng/one-api/common/logger"
+	"github.com/songquanpeng/one-api/common/random"
 )
 
 var (
@@ -235,16 +236,57 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 		return nil, errors.New("channel not found")
 	}
 	endIdx := len(channels)
-	// choose by priority
-	firstChannel := channels[0]
-	if firstChannel.GetPriority() > 0 {
-		for i := range channels {
-			if channels[i].GetPriority() != firstChannel.GetPriority() {
-				endIdx = i
-				break
+
+	// 新数组，用于存储提取的结果
+	var maxPriority int64 = -10000
+	var useableChannels []*Channel
+	// 提取原始数组的所有元素到新数组
+	for _, channel := range channels {
+		currentConnections, err := CacheGetChannelCurrentConnections(channel.Id, model)
+		if err != nil {
+			logger.SysError(fmt.Sprintf("failed to get channel %d's current connections: %s", channel.Id, err.Error()))
+			currentConnections = "0"
+		}
+		currentConnectionsInt, err := strconv.ParseInt(currentConnections, 10, 64)
+		if err != nil {
+			logger.SysError(fmt.Sprintf("failed to parse channel %d's current connections: %s", channel.Id, err.Error()))
+			currentConnectionsInt = 0
+		}
+
+		modelConnMapping := channel.GetModelConnMapping()
+		maxConn := int64(-1) // 默认值 -1 表示无限制
+
+		// 如果 modelConnMapping 存在且包含目标 model，则获取最大连接数
+		if modelConnMapping != nil {
+			if conn, exists := modelConnMapping[model]; exists {
+				maxConn = conn
 			}
 		}
+
+		// 判断当前连接数是否小于最大连接数或无限制
+		if maxConn == -1 || currentConnectionsInt < maxConn {
+			useableChannels = append(useableChannels, channel)
+			if channel.GetPriority() > maxPriority {
+				maxPriority = channel.GetPriority()
+			}
+		}
+
 	}
+
+	// 收集所有具有最大优先级的 Channel
+	var maxPriorityChannels []*Channel
+	for _, ch := range useableChannels {
+		if ch.GetPriority() == maxPriority {
+			maxPriorityChannels = append(maxPriorityChannels, ch)
+		}
+	}
+
+	// 如果有多个最大优先级的 Channel，随机选择其中一个
+	if len(maxPriorityChannels) > 1 {
+		randIdx := rand.Intn(len(maxPriorityChannels))
+		return maxPriorityChannels[randIdx], nil
+	}
+
 	idx := rand.Intn(endIdx)
 	if ignoreFirstPriority {
 		if endIdx < len(channels) { // which means there are more than one priority
@@ -252,4 +294,30 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 		}
 	}
 	return channels[idx], nil
+}
+
+// 在这里添加和减少channel的当前连接数
+func CacheGetChannelCurrentConnections(channelId int, model string) (string, error) {
+	if !common.RedisEnabled {
+		return "0", nil
+	}
+	return common.RedisGet(fmt.Sprintf("channel_connections:%s:%d", model, channelId))
+}
+
+// 在这里添加和减少channel的当前连接数
+func CacheIncreaseChannelCurrentConnections(channelId int, model string) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	err := common.RedisIncrease(fmt.Sprintf("channel_connections:%s:%d", model, channelId), 1)
+	return err
+}
+
+// 在这里添加和减少channel的当前连接数
+func CacheDecreaseChannelCurrentConnections(channelId int, model string) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	err := common.RedisDecrease(fmt.Sprintf("channel_connections:%s:%d", model, channelId), 1)
+	return err
 }

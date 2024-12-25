@@ -38,6 +38,7 @@ type Channel struct {
 	Priority           *int64  `json:"priority" gorm:"bigint;default:0"`
 	Config             string  `json:"config"`
 	SystemPrompt       *string `json:"system_prompt" gorm:"type:text"`
+	ModelConnMapping   *string `json:"model_conn_mapping" gorm:"type:varchar(1024);default:''"`
 }
 
 type ChannelConfig struct {
@@ -122,6 +123,21 @@ func (channel *Channel) GetModelMapping() map[string]string {
 		return nil
 	}
 	return modelMapping
+}
+
+func (channel *Channel) GetModelConnMapping() map[string]int64 {
+	if channel.ModelConnMapping == nil || *channel.ModelConnMapping == "" || *channel.ModelConnMapping == "{}" {
+		return nil
+	}
+
+	modelConnMapping := make(map[string]int64)
+	err := json.Unmarshal([]byte(*channel.ModelConnMapping), &modelConnMapping)
+	if err != nil {
+		logger.SysError(fmt.Sprintf("failed to unmarshal model connection mapping for channel %d, error: %s", channel.Id, err.Error()))
+		return nil
+	}
+
+	return modelConnMapping
 }
 
 func (channel *Channel) Insert() error {

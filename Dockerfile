@@ -4,13 +4,13 @@ WORKDIR /web
 COPY ./VERSION .
 COPY ./web .
 
-WORKDIR /web/default
-RUN npm install
-RUN DISABLE_ESLINT_PLUGIN='true' REACT_APP_VERSION=$(cat VERSION) npm run build
+# WORKDIR /web/default
+# RUN npm install
+# RUN DISABLE_ESLINT_PLUGIN='true' REACT_APP_VERSION=$(cat VERSION) npm run build
 
-WORKDIR /web/berry
-RUN npm install
-RUN DISABLE_ESLINT_PLUGIN='true' REACT_APP_VERSION=$(cat VERSION) npm run build
+# WORKDIR /web/berry
+# RUN npm install
+# RUN DISABLE_ESLINT_PLUGIN='true' REACT_APP_VERSION=$(cat VERSION) npm run build
 
 WORKDIR /web/air
 RUN npm install

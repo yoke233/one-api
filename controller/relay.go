@@ -24,6 +24,10 @@ import (
 // https://platform.openai.com/docs/api-reference/chat
 
 func relayHelper(c *gin.Context, relayMode int) *model.ErrorWithStatusCode {
+	channelId := c.GetInt(ctxkey.ChannelId)
+	originalModel := c.GetString(ctxkey.OriginalModel)
+
+	dbmodel.CacheIncreaseChannelCurrentConnections(channelId, originalModel)
 	var err *model.ErrorWithStatusCode
 	switch relayMode {
 	case relaymode.ImagesGenerations:
@@ -39,6 +43,7 @@ func relayHelper(c *gin.Context, relayMode int) *model.ErrorWithStatusCode {
 	default:
 		err = controller.RelayTextHelper(c)
 	}
+	dbmodel.CacheDecreaseChannelCurrentConnections(channelId, originalModel)
 	return err
 }
 
@@ -78,7 +83,7 @@ func Relay(c *gin.Context) {
 			continue
 		}
 		middleware.SetupContextForSelectedChannel(c, channel, originalModel)
-		requestBody, err := common.GetRequestBody(c)
+		requestBody, _ := common.GetRequestBody(c)
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 		bizErr = relayHelper(c, relayMode)
 		if bizErr == nil {
