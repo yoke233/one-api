@@ -241,6 +241,7 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 	// 新数组，用于存储提取的结果
 	var maxPriority int64 = -10000
 	var useableChannels []*Channel
+	var chConns map[int][2]int64 = make(map[int][2]int64)
 	// 提取原始数组的所有元素到新数组
 	for _, channel := range channels {
 		// 如果 channel 在 failedIdList 中，则跳过
@@ -272,8 +273,9 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 
 		// 判断当前连接数是否小于最大连接数或无限制
 		if maxConn == 100 || currentConnectionsInt < maxConn {
-			logger.SysLog(fmt.Sprintf("usable %s channel %d, conn:%d/%d, priority:%d",
+			logger.SysDebug(fmt.Sprintf("usable %s channel %d, conn:%d/%d, priority:%d",
 				model, channel.Id, currentConnectionsInt, maxConn, channel.GetPriority()))
+			chConns[channel.Id] = [2]int64{currentConnectionsInt, maxConn}
 			useableChannels = append(useableChannels, channel)
 			if channel.GetPriority() > maxPriority {
 				maxPriority = channel.GetPriority()
@@ -295,7 +297,8 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 	if len(maxPriorityChannels) > 0 {
 		randIdx := rand.Intn(len(maxPriorityChannels))
 		ch := maxPriorityChannels[randIdx]
-		logger.SysLog(fmt.Sprintf("selected %s channel: %d:%s, priority: %d/%d", model, ch.Id, ch.Name, ch.GetPriority(), maxPriority))
+		logger.SysLog(fmt.Sprintf("selected %s channel: %d:%s, conn: %d/%d, priority: %d/%d",
+			model, ch.Id, ch.Name, chConns[ch.Id][0], chConns[ch.Id][1], ch.GetPriority(), maxPriority))
 		return ch, nil
 	}
 

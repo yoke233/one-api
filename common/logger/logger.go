@@ -43,9 +43,18 @@ func SetupLogger() {
 	})
 }
 
+func SysDebug(s string) {
+	t := time.Now()
+	_, _ = fmt.Fprintf(gin.DefaultWriter, "[%s] %v | %s \n", loggerDEBUG, t.Format("2006/01/02 - 15:04:05"), s)
+}
+
+func SysDebugf(format string, a ...any) {
+	SysDebug(fmt.Sprintf(format, a...))
+}
+
 func SysLog(s string) {
 	t := time.Now()
-	_, _ = fmt.Fprintf(gin.DefaultWriter, "[SYS] %v | %s \n", t.Format("2006/01/02 - 15:04:05"), s)
+	_, _ = fmt.Fprintf(gin.DefaultWriter, "[%s] %v | %s \n", loggerDEBUG, t.Format("2006/01/02 - 15:04:05"), s)
 }
 
 func SysLogf(format string, a ...any) {
