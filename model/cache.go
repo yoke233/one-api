@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -225,9 +226,9 @@ func SyncChannelCache(frequency int) {
 	}
 }
 
-func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority bool) (*Channel, error) {
+func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority bool, failedIdList []int) (*Channel, error) {
 	if !config.MemoryCacheEnabled {
-		return GetRandomSatisfiedChannel(group, model, ignoreFirstPriority)
+		return GetRandomSatisfiedChannel(group, model, ignoreFirstPriority, failedIdList[0])
 	}
 	channelSyncLock.RLock()
 	defer channelSyncLock.RUnlock()
@@ -242,35 +243,42 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 	var useableChannels []*Channel
 	// 提取原始数组的所有元素到新数组
 	for _, channel := range channels {
-		currentConnections, err := CacheGetChannelCurrentConnections(channel.Id, model)
-		if err != nil {
-			logger.SysError(fmt.Sprintf("failed to get channel %d's current connections: %s", channel.Id, err.Error()))
-			currentConnections = "0"
-		}
-		currentConnectionsInt, err := strconv.ParseInt(currentConnections, 10, 64)
-		if err != nil {
-			logger.SysError(fmt.Sprintf("failed to parse channel %d's current connections: %s", channel.Id, err.Error()))
-			currentConnectionsInt = 0
+		// 如果 channel 在 failedIdList 中，则跳过
+		// logger.SysLog(fmt.Sprintf("failedIdList: %v", failedIdList))
+		if slices.Contains(failedIdList, int(channel.Id)) {
+			continue
 		}
 
+		var currentConnectionsInt int64 = 0
 		modelConnMapping := channel.GetModelConnMapping()
-		maxConn := int64(-1) // 默认值 -1 表示无限制
+		maxConn := int64(100) // 默认值 100 表示无限制
 
 		// 如果 modelConnMapping 存在且包含目标 model，则获取最大连接数
 		if modelConnMapping != nil {
+			currentConnections, err := CacheGetChannelCurrentConnections(channel.Id, model)
+			if err != nil {
+				// logger.SysError(fmt.Sprintf("failed to get channel %d's current connections: %s", channel.Id, err.Error()))
+				currentConnections = "0"
+			}
+			currentConnectionsInt, err = strconv.ParseInt(currentConnections, 10, 64)
+			if err != nil {
+				// logger.SysError(fmt.Sprintf("failed to parse channel %d's current connections: %s", channel.Id, err.Error()))
+				currentConnectionsInt = 0
+			}
 			if conn, exists := modelConnMapping[model]; exists {
 				maxConn = conn
 			}
 		}
 
 		// 判断当前连接数是否小于最大连接数或无限制
-		if maxConn == -1 || currentConnectionsInt < maxConn {
+		if maxConn == 100 || currentConnectionsInt < maxConn {
+			logger.SysLog(fmt.Sprintf("usable %s channel %d, conn:%d/%d, priority:%d",
+				model, channel.Id, currentConnectionsInt, maxConn, channel.GetPriority()))
 			useableChannels = append(useableChannels, channel)
 			if channel.GetPriority() > maxPriority {
 				maxPriority = channel.GetPriority()
 			}
 		}
-
 	}
 
 	// 收集所有具有最大优先级的 Channel
@@ -281,10 +289,14 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 		}
 	}
 
+	// logger.SysLog(fmt.Sprintf("maxPriorityChannels count: %d %d", maxPriority, len(maxPriorityChannels)))
+
 	// 如果有多个最大优先级的 Channel，随机选择其中一个
-	if len(maxPriorityChannels) > 1 {
+	if len(maxPriorityChannels) > 0 {
 		randIdx := rand.Intn(len(maxPriorityChannels))
-		return maxPriorityChannels[randIdx], nil
+		ch := maxPriorityChannels[randIdx]
+		logger.SysLog(fmt.Sprintf("selected %s channel: %d:%s, priority: %d/%d", model, ch.Id, ch.Name, ch.GetPriority(), maxPriority))
+		return ch, nil
 	}
 
 	idx := rand.Intn(endIdx)
