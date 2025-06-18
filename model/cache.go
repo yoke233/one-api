@@ -226,7 +226,7 @@ func SyncChannelCache(frequency int) {
 	}
 }
 
-func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority bool, failedIdList []int) (*Channel, error) {
+func CacheGetRandomSatisfiedChannel(ctx context.Context, group string, model string, ignoreFirstPriority bool, failedIdList []int) (*Channel, error) {
 	if !config.MemoryCacheEnabled {
 		return GetRandomSatisfiedChannel(group, model, ignoreFirstPriority, failedIdList[0])
 	}
@@ -273,7 +273,7 @@ func CacheGetRandomSatisfiedChannel(group string, model string, ignoreFirstPrior
 
 		// 判断当前连接数是否小于最大连接数或无限制
 		if maxConn == 100 || currentConnectionsInt < maxConn {
-			logger.SysDebug(fmt.Sprintf("usable %s channel %d, conn:%d/%d, priority:%d",
+			logger.Debug(ctx, fmt.Sprintf("usable %s channel %d, conn:%d/%d, priority:%d",
 				model, channel.Id, currentConnectionsInt, maxConn, channel.GetPriority()))
 			chConns[channel.Id] = [2]int64{currentConnectionsInt, maxConn}
 			useableChannels = append(useableChannels, channel)
