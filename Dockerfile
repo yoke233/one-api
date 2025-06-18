@@ -20,7 +20,11 @@ FROM golang:alpine AS builder2
 
 # 设置环境变量，使用国内的 Alpine 镜像源
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
-RUN apk add --no-cache g++
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    sqlite-dev \
+    build-base
 RUN go env -w  GOPROXY=https://goproxy.cn,direct
 
 ENV GO111MODULE=on \
