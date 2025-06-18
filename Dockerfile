@@ -16,7 +16,7 @@ WORKDIR /web/air
 RUN npm install
 RUN DISABLE_ESLINT_PLUGIN='true' REACT_APP_VERSION=$(cat VERSION) npm run build
 
-FROM golang:alpine AS builder2
+FROM golang:1.21-alpine AS builder2
 
 # 设置环境变量，使用国内的 Alpine 镜像源
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
@@ -36,7 +36,7 @@ ADD go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=builder /web/build ./web/build
-RUN go build -trimpath -ldflags "-s -w -extldflags '-static'" -o one-api
+RUN go build -trimpath -ldflags "-s -w -linkmode external -extldflags '-static'" -o one-api
 
 FROM alpine
 
