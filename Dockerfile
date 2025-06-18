@@ -32,7 +32,7 @@ ADD go.mod go.sum ./
 RUN go mod download
 COPY . .
 COPY --from=builder /web/build ./web/build
-RUN go build -trimpath -ldflags "-s -w -X 'github.com/songquanpeng/one-api/common.Version=$(cat VERSION)' -extldflags '-static'" -o one-api
+RUN go build -trimpath -ldflags "-s -w -extldflags '-static'" -o one-api
 
 FROM alpine
 
