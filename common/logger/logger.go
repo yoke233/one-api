@@ -54,7 +54,7 @@ func SysDebugf(format string, a ...any) {
 
 func SysLog(s string) {
 	t := time.Now()
-	_, _ = fmt.Fprintf(gin.DefaultWriter, "[%s] %v | %s \n", loggerDEBUG, t.Format("2006/01/02 - 15:04:05"), s)
+	_, _ = fmt.Fprintf(gin.DefaultWriter, "[%s] %v | %s \n", loggerINFO, t.Format("2006/01/02 - 15:04:05"), s)
 }
 
 func SysLogf(format string, a ...any) {

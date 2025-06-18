@@ -29,10 +29,10 @@ func GetRandomSatisfiedChannel(group string, model string, ignoreFirstPriority b
 	var err error = nil
 	var channelQuery *gorm.DB
 	if ignoreFirstPriority {
-		channelQuery = DB.Where(groupCol+" = ? and id != ? model = ? and enabled = "+trueVal, group, ignoreChannelId, model)
+		channelQuery = DB.Where(groupCol+" = ? and model = ? and enabled = "+trueVal, group, model)
 	} else {
 		maxPrioritySubQuery := DB.Model(&Ability{}).Select("MAX(priority)").Where(groupCol+" = ? and model = ? and enabled = "+trueVal, group, model)
-		channelQuery = DB.Where(groupCol+" = ? and id != ? model = ? and enabled = "+trueVal+" and priority = (?)", group, ignoreChannelId, model, maxPrioritySubQuery)
+		channelQuery = DB.Where(groupCol+" = ? and model = ? and enabled = "+trueVal+" and priority = (?)", group, model, maxPrioritySubQuery)
 	}
 	if common.UsingSQLite || common.UsingPostgreSQL {
 		err = channelQuery.Order("RANDOM()").First(&ability).Error

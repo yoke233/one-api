@@ -1,12 +1,14 @@
 package model
 
 import (
-	"github.com/songquanpeng/one-api/common/config"
-	"github.com/songquanpeng/one-api/common/logger"
-	billingratio "github.com/songquanpeng/one-api/relay/billing/ratio"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/songquanpeng/one-api/common/config"
+	"github.com/songquanpeng/one-api/common/logger"
+	billingratio "github.com/songquanpeng/one-api/relay/billing/ratio"
 )
 
 type Option struct {
@@ -233,6 +235,7 @@ func updateOptionMap(key string, value string) (err error) {
 			}
 			channels = append(channels, channelID)
 		}
+		logger.SysLog("check NonDisablableChannels: " + fmt.Sprint(channels))
 		config.NonDisablableChannels = channels
 	case "PreConsumedQuota":
 		config.PreConsumedQuota, _ = strconv.ParseInt(value, 10, 64)

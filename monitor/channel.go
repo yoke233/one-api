@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"fmt"
+
 	"github.com/songquanpeng/one-api/common/config"
 	"github.com/songquanpeng/one-api/common/logger"
 	"github.com/songquanpeng/one-api/common/message"
@@ -36,6 +37,7 @@ func DisableChannel(channelId int, channelName string, reason string) {
 }
 
 func MetricDisableChannel(channelId int, successRate float64) {
+	logger.SysDebug(fmt.Sprintf("channel #%d success rate: %.2f", channelId, successRate*100))
 	// Check if the channel is marked as non-disablable
 	if contains(config.NonDisablableChannels, channelId) {
 		logger.SysLog(fmt.Sprintf("channel #%d is marked as non-disablable, skipping disable action", channelId))
@@ -53,12 +55,12 @@ func MetricDisableChannel(channelId int, successRate float64) {
 
 // 定义一个泛型函数
 func contains[T comparable](arr []T, val T) bool {
-    for _, item := range arr {
-        if item == val {
-            return true
-        }
-    }
-    return false
+	for _, item := range arr {
+		if item == val {
+			return true
+		}
+	}
+	return false
 }
 
 // EnableChannel enable & notify
