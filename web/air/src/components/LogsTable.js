@@ -261,9 +261,7 @@ const LogsTable = () => {
     setLoading(false);
   };
 
-  const pageData = logs
-    .slice((activePage - 1) * pageSize, activePage * pageSize)
-    .sort((a, b) => b.created_at - a.created_at || (b.id ?? 0) - (a.id ?? 0));
+  const pageData = logs.slice((activePage - 1) * pageSize, activePage * pageSize);
 
   const handlePageChange = page => {
     setActivePage(page);
